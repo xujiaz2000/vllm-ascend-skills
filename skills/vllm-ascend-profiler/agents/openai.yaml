@@ -1,0 +1,4 @@
+interface:
+  display_name: "vLLM Ascend 性能采集"
+  short_description: "按确认的请求窗口采集昇腾推理服务的时间线，逐个 rank 解析并校验"
+  default_prompt: "$vllm-ascend-profiler 通过 /path/to/start_service.sh 拉起模型服务，采集 1s 的 profiling。"
