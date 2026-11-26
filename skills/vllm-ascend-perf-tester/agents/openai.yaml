@@ -1,0 +1,4 @@
+interface:
+  display_name: "vLLM Ascend 性能测试"
+  short_description: "先确认负载与并发，再运行 AISBench 稳态测试并核验结果和日志"
+  default_prompt: "$vllm-ascend-perf-tester 通过 /srv/model/start_service.sh 拉起模型服务，跑一下性能测试。"
