@@ -18,12 +18,16 @@ description: 在远程昇腾服务器上用 vLLM Ascend 部署模型推理服务
 | 未指定的项目 | 默认值 |
 | --- | --- |
 | SSH | 使用 `root@<主机>`，假定已配置免密登录 |
-| A3 镜像 | `quay.io/ascend/vllm-ascend:nightly-main-a3` |
-| A5 镜像 | `quay.io/ascend/vllm-ascend:nightly-main-a5` |
+| 绿区 A3 镜像 | `docker pull quay.io/ascend/vllm-ascend:nightly-main-a3` |
+| 绿区 A5 镜像 | `docker pull quay.io/ascend/vllm-ascend:nightly-main-a5` |
+| 蓝区 A3 镜像 | `docker pull swr.cn-north-12.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend-presmoke:nightly-ci-main-a3` |
+| 蓝区 A5 镜像 | `docker pull swr.cn-north-12.myhuaweicloud.com/base_image/ascend-ci/vllm-ascend-presmoke:nightly-ci-main-a5` |
 | 数据挂载 | 宿主机有 `/mnt` 时添加 `-v /mnt:/mnt`；确保指定的权重和工作目录在容器中可访问 |
 | vLLM Ascend | [主仓](https://github.com/vllm-project/vllm-ascend)部署时的最新 `main`，解析为具体提交 |
 | vLLM | 读取该 Ascend **同一提交**的 `.github/vllm-main-verified.commit`，使用文件指定的提交 |
 | 容器和服务参数 | 从[官方模型教程索引](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/index.html)进入对应模型，选定硬件标签和部署章节；服务端口与别名优先沿用该示例 |
+
+按本次部署的区域和硬件型号选择镜像。用户显式给出镜像名时优先采用。区域未说明时，沿用绿区作为待确认的默认候选；硬件未知时列出该区域的 A3/A5 两种命令。核对单中写明区域及完整的 `docker pull <镜像名>` 命令。
 
 **首轮直接给出核对单和简短执行计划，等用户确认后才连接服务器。** 用“已给出 / 推断（理由）/ 默认 / 待探测”标明每项来源。核对单涵盖主机与 SSH 用户、硬件、模型与权重、容器和工作目录、部署拓扑与设备需求、镜像和源码策略、官方章节、端口、挂载及额外适配。若缺少无法推断且会阻止执行的信息（例如指定跨机 1P1D 却缺第二台地址），在计划末尾只问这一类缺口。对于可在授权后探测的事项，直接给出条件计划。
 
@@ -32,7 +36,7 @@ description: 在远程昇腾服务器上用 vLLM Ascend 部署模型推理服务
 ## 收到执行指令后
 
 1. **核对现场。** 在宿主机确认硬件、逻辑 NPU、Docker runtime、磁盘、镜像缓存、同名容器、权重和工作目录挂载、服务端口及设备占用。已有同名容器时核对镜像、挂载和实际服务；一致且已健康时直接验收，有冲突则保留原容器并报告。多节点逐台核对官方要求的角色、设备和互联条件。
-2. **创建容器。** 从教程对应的 `docker run` 复制实际需要的命令，保存为 `<工作目录>/scripts/create_container.sh`。保留官网的网络、IPC、设备分配和驱动挂载，代入已确认的镜像、容器名和路径。本地先用 `docker image inspect` 检查目标镜像，缺失时才 `docker pull`。检查容器内能读到权重、能写工作目录。若设备已被独占，先验证当前可查的映射，把设备运行验证留到交接后。
+2. **创建容器。** 从教程对应的 `docker run` 复制实际需要的命令，保存为 `<工作目录>/scripts/create_container.sh`。保留官网的网络、IPC、设备分配和驱动挂载，代入已确认的镜像、容器名和路径。在目标宿主机将完整镜像名赋给 `IMAGE`，先用 `docker image inspect "$IMAGE"` 检查缓存，缺失时才执行 `docker pull "$IMAGE"`。检查容器内能读到权重、能写工作目录。若设备已被独占，先验证当前可查的映射，把设备运行验证留到交接后。
 3. **对齐运行环境。** 宿主机仅承担 Docker、挂载、资源归属查询等必要操作；源码准备、构建、安装、服务启动、调试和功能验证均在指定容器内完成。在容器中比对镜像自带的两份实际提交与目标 SHA；nightly 标签本身不能证明匹配。匹配则复用，否则按对应仓库的官方安装方式对齐，只安装需要的部分。若指定提交缺少配对文件或无法解析其中的版本，报告版本缺口，请用户指定可用配对。核对最终 Python 导入路径及对应源码提交。确需安装时可另存一次性 `scripts/prepare_source.sh`，日常拉起服务不重复安装。
 4. **管理下载归档。** 镜像直接 pull 或源码直接 clone 时无需另造压缩包。若使用离线镜像归档，先校验并 `docker load`，确认目标镜像 ID 和架构；源码压缩包在解压后核对提交或校验和及目录完整性。所有依赖该副本的节点导入或解压成功后，删除本次下载的相应归档、已合并的下载分块和中转副本，核实已移除。保留已导入镜像与已解压源码，避免按通配符清理共享目录中他人的文件。
 5. **按官网生成服务脚本。** 将选定教程的服务命令保存为 `<工作目录>/scripts/start_service.sh`。保留环境变量、启动入口和原有参数，替换实际路径及用户要求的改动。逐项与官网对照，仅加入所选拓扑必需的联动改动，或由现场报错证实的适配。教程使用 `vllm serve` 时直接使用该入口。若通过 `docker exec` 拉起，核对镜像入口实际设置的运行环境，按需补齐。准备好容器内后台启动命令和日志路径，或沿用教程的常驻启动方式。
