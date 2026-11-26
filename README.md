@@ -11,14 +11,7 @@
 将需要的 skill 目录安装到 Codex 的 `~/.codex/skills/`（自定义 `CODEX_HOME` 时使用其下的 `skills/`）。以下请求使用示例地址和路径，调用时替换为实际值。
 
 ```text
-$vllm-ascend-model-deployer
-服务器类型：A3 752T
-IP：192.0.2.10
-容器名称：deepseek-v41
-工作目录：/mnt/share/team/deepseek-v41
-模型权重路径：/mnt/weights/DeepSeek-V4.1-Flash-1017-w4a8
-服务部署方式：A3 单节点共置
-额外适配点：无
+$vllm-ascend-model-deployer 帮我在 192.0.2.10 服务器上拉起 DeepSeek-V4.1-Flash 模型服务，权重位于 /mnt/weights/DeepSeek-V4.1-Flash-1017-w4a8。
 ```
 
-核对返回的机器、环境和计划后，回复“执行”。需要 TP8PP2 等改动时，在“额外适配点”中明确填写。
+只给一台服务器时，如果对应教程支持单节点共置，skill 会先提议该方式，给出容器名、工作目录和执行计划，并注明哪些信息要上机核实，例如硬件型号和空闲显存。回复“确认”即可执行，也可以直接修正，例如“改为 1P1D，P 节点用 192.0.2.10，D 节点用 192.0.2.11”。需要 TP8PP2 等额外适配时，也可以直接写在请求中。

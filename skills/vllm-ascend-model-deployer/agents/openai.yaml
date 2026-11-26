@@ -1,4 +1,4 @@
 interface:
   display_name: "vLLM Ascend 模型服务部署"
   short_description: "核对部署计划后，按官方指南在远程昇腾服务器上拉起并验证模型服务"
-  default_prompt: "使用 $vllm-ascend-model-deployer 根据我的机器、权重和部署方式列出计划，等我确认后部署并验证模型服务。"
+  default_prompt: "$vllm-ascend-model-deployer 帮我在 <服务器> 上拉起 <模型名> 模型服务，权重位于 <权重路径>。"
